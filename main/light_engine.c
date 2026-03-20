@@ -24,16 +24,16 @@
 
 
 #define RED_CHANNEL      LEDC_CHANNEL_0
-#define RED_GPIO         GPIO_NUM_19
+#define RED_GPIO         GPIO_NUM_17
 
 #define GREEN_CHANNEL    LEDC_CHANNEL_1
 #define GREEN_GPIO       GPIO_NUM_18
 
 #define BLUE_CHANNEL     LEDC_CHANNEL_2
-#define BLUE_GPIO        GPIO_NUM_17
+#define BLUE_GPIO        GPIO_NUM_19
 
 #define WHISKER_CHANNEL  LEDC_CHANNEL_3
-#define WHISKER_GPIO     GPIO_NUM_21
+#define WHISKER_GPIO     GPIO_NUM_16
 
 static const char *TAG = "light_engine";
 
@@ -98,7 +98,6 @@ void light_engine_init() {
         .speed_mode = ENGINE_LEDC_SPEED_MODE,
         .timer_sel = ENGINE_LEDC_TIMER,
         .intr_type = LEDC_INTR_DISABLE,
-        .sleep_mode = LEDC_SLEEP_MODE_INVALID,
         .duty = 0,
     };
 

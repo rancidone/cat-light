@@ -24,7 +24,7 @@ void input_init() {
 }
 
 bool button_down() {
-    return gpio_get_level(GPIO_NUM_32) == 0; // active low
+    return gpio_get_level(GPIO_NUM_4) == 0; // active low
 }
 
 bool button_pressed() {

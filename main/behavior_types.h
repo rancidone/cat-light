@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdalign.h>
 #include "esp_err.h"
 
 // 0.0 - 1.0 brightness for each channel
@@ -100,6 +101,18 @@ typedef struct {
     int   ms_until_change;
     uint32_t rng;
 } behavior_flicker_state_t;
+
+// ---- Pulse RGB ----
+typedef struct {
+    rgb_frame_t color;
+    float cycle_speed; // pulses per second
+} behavior_pulse_rgb_config_t;
+
+typedef struct {
+    rgb_frame_t color;
+    float phase;
+    float cycle_speed;
+} behavior_pulse_rgb_state_t;
 
 // ---- Rainbow ----
 typedef struct {
