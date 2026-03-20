@@ -107,6 +107,37 @@ const rgb_behavior_t behavior_solid_rgb = {
     .update = s_behavior_solid_rgb_update,
 };
 
+// ---- Pulse RGB ----
+static esp_err_t s_behavior_pulse_rgb_init(void *v_state, const void *v_config)
+{
+    ESP_LOGI(TAG, "Initializing behavior [pulse_rgb]...");
+    behavior_pulse_rgb_state_t *state = (behavior_pulse_rgb_state_t *)v_state;
+    const behavior_pulse_rgb_config_t *config = (const behavior_pulse_rgb_config_t *)v_config;
+    state->color       = config->color;
+    state->phase       = 0.0f;
+    state->cycle_speed = config->cycle_speed;
+    ESP_LOGI(TAG, "Behavior initialized [pulse_rgb]: cycle_speed=%.2f", state->cycle_speed);
+    return ESP_OK;
+}
+
+static esp_err_t s_behavior_pulse_rgb_update(void *v_state, rgb_frame_t *output, int dt_ms)
+{
+    behavior_pulse_rgb_state_t *state = (behavior_pulse_rgb_state_t *)v_state;
+    state->phase += (float)M_TWOPI * state->cycle_speed * (dt_ms / 1000.0f);
+    if (state->phase >= (float)M_TWOPI) state->phase -= (float)M_TWOPI;
+    float brightness = (sinf(state->phase) + 1.0f) / 2.0f;
+    output->r = state->color.r * brightness;
+    output->g = state->color.g * brightness;
+    output->b = state->color.b * brightness;
+    return ESP_OK;
+}
+
+const rgb_behavior_t behavior_pulse_rgb = {
+    .state_size = sizeof(behavior_pulse_rgb_state_t),
+    .init   = s_behavior_pulse_rgb_init,
+    .update = s_behavior_pulse_rgb_update,
+};
+
 // ---- Flicker RGB ----
 static esp_err_t s_behavior_flicker_init(void *v_state, const void *v_config)
 {

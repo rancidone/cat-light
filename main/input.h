@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define BUTTON_BIT (1ULL << GPIO_NUM_32)
+#define BUTTON_BIT (1ULL << GPIO_NUM_4)
 
 void input_init();
 bool button_down();

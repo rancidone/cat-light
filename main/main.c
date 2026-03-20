@@ -13,7 +13,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initializing cat-light...");
     input_init();
     light_engine_init();
-    light_mode_manager_apply(light_engine_get(), LIGHT_MODE_IDLE);
+    light_mode_manager_apply(light_engine_get(), LIGHT_MODE_DEBUG_PULSE);
     light_engine_start();
     ESP_LOGI(TAG, "cat-light initialized.");
 

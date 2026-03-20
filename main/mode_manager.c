@@ -10,6 +10,14 @@ static const char *TAG = "mode_manager";
 
 // ---- Mode configs ----
 
+static const behavior_pulse_rgb_config_t s_debug_pulse_eye_config = {
+    .color       = {.r = 1.0f, .g = 1.0f, .b = 1.0f},
+    .cycle_speed = 0.5f,
+};
+static const behavior_pulse_config_t s_debug_pulse_whisker_config = {
+    .cycle_speed = 0.5f,
+};
+
 static const behavior_solid_rgb_config_t s_idle_eye_config = {
     .color = {.r = 0.0f, .g = 0.05f, .b = 0.45f},
 };
@@ -21,10 +29,10 @@ static const behavior_flicker_config_t s_spooky_eye_config = {
     .color         = {.r = 1.0f, .g = 0.0f, .b = 0.0f},
     .min_brightness = 0.15f,
     .max_brightness = 1.0f,
-    .avg_flicker_hz = 12.0f,
+    .avg_flicker_hz = 6.0f,
 };
 static const behavior_pulse_config_t s_spooky_whisker_config = {
-    .cycle_speed = 3.0f,
+    .cycle_speed = 0.33f,
 };
 
 static const behavior_rainbow_config_t s_rainbow_eye_config = {
@@ -37,6 +45,23 @@ static const behavior_solid_config_t s_rainbow_whisker_config = {
 // ---- Mode table ----
 
 static const light_mode_t LIGHT_MODE_TABLE[LIGHT_MODE_COUNT] = {
+    [LIGHT_MODE_DEBUG_PULSE] = {
+        .name = "debug_pulse",
+        .eyes = {
+            .kind = EYE_MODE_RGB_DIRECT,
+            .rgb_direct = {
+                .behavior = &behavior_pulse_rgb,
+                .config   = &s_debug_pulse_eye_config,
+            },
+        },
+        .whiskers = {
+            .kind = WHISKER_MODE_SCALAR,
+            .scalar = {
+                .behavior = &behavior_pulse,
+                .config   = &s_debug_pulse_whisker_config,
+            },
+        },
+    },
     [LIGHT_MODE_IDLE] = {
         .name = "idle",
         .eyes = {
@@ -81,12 +106,16 @@ static const light_mode_t LIGHT_MODE_TABLE[LIGHT_MODE_COUNT] = {
             },
         },
         .whiskers = {
-            .kind = WHISKER_MODE_OFF,
+            .kind = WHISKER_MODE_SCALAR,
+            .scalar = {
+                .behavior = &behavior_solid,
+                .config   = &s_rainbow_whisker_config,
+            },
         },
     },
 };
 
-static light_mode_id_t s_current_mode = LIGHT_MODE_IDLE;
+static light_mode_id_t s_current_mode = LIGHT_MODE_DEBUG_PULSE;
 
 void mode_manager_cycle(light_engine_t *engine)
 {

@@ -48,7 +48,8 @@ typedef struct {
 } light_mode_t;
 
 typedef enum {
-    LIGHT_MODE_IDLE = 0,
+    LIGHT_MODE_DEBUG_PULSE = 0,
+    LIGHT_MODE_IDLE,
     LIGHT_MODE_SPOOKY,
     LIGHT_MODE_RAINBOW,
     LIGHT_MODE_COUNT
