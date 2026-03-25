@@ -1,17 +1,16 @@
 #pragma once
-#include "esp_err.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "behavior_types.h"
+#include <stdint.h>
 
 typedef struct {
-    rgb_behavior_instance_t    rgb_behavior;
-    scalar_behavior_instance_t whisker_behavior;
-    light_frame_t              frame;
-    SemaphoreHandle_t          behavior_mutex;
-} light_engine_t;
+    uint8_t eye_r;
+    uint8_t eye_g;
+    uint8_t eye_b;
+    float   whisker; // 0.0–1.0
+} light_frame_t;
 
-void light_engine_init();
-void light_engine_start();
-light_engine_t *light_engine_get(void);
+typedef void (*mode_tick_fn_t)(light_frame_t *frame, uint32_t dt_ms, void *ctx);
+
+void light_engine_init(void);
+void light_engine_start(void);
+void light_engine_set_mode_tick(mode_tick_fn_t fn, void *ctx);
+void light_engine_set_brightness(float brightness);
