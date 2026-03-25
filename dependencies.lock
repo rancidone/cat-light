@@ -1,0 +1,21 @@
+dependencies:
+  georgik/lua:
+    component_hash: 1ab17ca24960f462aa403fc8d338c37c0cee4dbc308c7393c270746c6d979f97
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 5.4.7
+  idf:
+    source:
+      type: idf
+    version: 5.5.3
+direct_dependencies:
+- georgik/lua
+- idf
+manifest_hash: fe065bda791edbcea4aeca7b79780422a2d3802a02d7b95fc08170e2c183a0b2
+target: esp32
+version: 2.0.0
