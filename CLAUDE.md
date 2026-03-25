@@ -12,6 +12,7 @@ Cat-shaped LED night light with custom PCB (KiCad, ESP32) and ESP-IDF C firmware
 - Firmware Design:
   - `./docs/design` — see `./docs/design/TEMPLATE.md` for frontmatter contract and status lifecycle
   - `./docs/discovery`
+- Testing: `./docs/testing-brief.md` — read before writing any tests
 - Makefile: `./CMakeLists.txt`
 - Main Module: `./main/`
 - Kicad PCB: `./pcb/`
@@ -20,7 +21,7 @@ Cat-shaped LED night light with custom PCB (KiCad, ESP32) and ESP-IDF C firmware
 
 Unless the user directly says otherwise you should:
 
-1. Read the latest `handoff-*.md` file in `./docs/summaries/` for current state.
+1. Read the latest `handoff_*.md` file in `./docs/summaries/` for current state.
 2. List all files in `./docs/summaries/` to understand what's been processed.
 3. Report:
    - **Project:** name and type

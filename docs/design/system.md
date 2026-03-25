@@ -57,4 +57,4 @@ Light Engine
 
 **Status:** Complete — constraint resolved.
 
-**Result:** 203 KB free after WiFi (STA init) + HTTP server + Lua VM + stdlib. Well above 50 KB threshold. No memory-driven constraints on scripting engine design. See `../summaries/handoff-2026-03-24T17:00-heap-spike.md` for full numbers.
+**Result:** 203 KB free after WiFi (STA init) + HTTP server + Lua VM + stdlib. Well above 50 KB threshold. No memory-driven constraints on scripting engine design. See `../summaries/handoff_2026-03-24T17:00_heap-spike.md` for full numbers.
