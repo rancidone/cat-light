@@ -1,9 +1,7 @@
-# TODOs
+This file contains a simple list of TODO items or references to additional TODO files
 
-## Pre-implementation
+----
 
-- [ ] Write `partitions.csv` — must be done before anything else; locks LittleFS and app partition sizes
+## TODO LIST
 
-## Design
-
-- [ ] Complete WiFi & Web Server design (Unit 5)
+ - No TODOs.

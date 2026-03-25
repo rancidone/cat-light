@@ -21,8 +21,8 @@ Cat-shaped LED night light with custom PCB (KiCad, ESP32) and ESP-IDF C firmware
 
 Unless the user directly says otherwise you should:
 
-1. Read the latest `handoff_*.md` file in `./docs/summaries/` for current state.
-2. List all files in `./docs/summaries/` to understand what's been processed.
+1. Read the latest `handoff_*.md` file in `docs/summaries/` for current state.
+2. List all files in `docs/summaries/` to understand what's been processed.
 3. Report:
    - **Project:** name and type
    - **Last session:** what was accomplished (from the latest handoff)

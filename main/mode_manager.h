@@ -1,59 +1,22 @@
 #pragma once
-#include "behavior_types.h"
+#include <stdint.h>
+#include <stddef.h>
 #include "light_engine.h"
 
 typedef enum {
-    EYE_MODE_OFF = 0,
-    EYE_MODE_SCALAR_TINT,
-    EYE_MODE_RGB_DIRECT,
-    EYE_MODE_SCRIPT,
-} mode_kind_eye_t;
+    MM_STATE_NORMAL,
+    MM_STATE_DEV,
+    MM_STATE_ERROR,
+} mode_manager_state_t;
 
-typedef enum {
-    WHISKER_MODE_OFF = 0,
-    WHISKER_MODE_SCALAR,
-    WHISKER_MODE_SCRIPT,
-} mode_kind_whisker_t;
+void mode_manager_init(void);
+void mode_manager_start(void);   // registers tick with light engine
 
-typedef struct {
-    mode_kind_eye_t kind;
-
-    union {
-        struct {
-            const scalar_behavior_t *behavior;
-            const void *config;
-            rgb_frame_t base_color;
-        } scalar_tint;
-
-        struct {
-            const rgb_behavior_t *behavior;
-            const void *config;
-        } rgb_direct;
-    };
-} eye_mode_config_t;
-
-typedef struct {
-    mode_kind_whisker_t kind;
-
-    struct {
-        const scalar_behavior_t *behavior;
-        const void *config;
-    } scalar;
-} whisker_mode_config_t;
-
-typedef struct {
-    const char *name;
-    eye_mode_config_t eyes;
-    whisker_mode_config_t whiskers;
-} light_mode_t;
-
-typedef enum {
-    LIGHT_MODE_DEBUG_PULSE = 0,
-    LIGHT_MODE_IDLE,
-    LIGHT_MODE_SPOOKY,
-    LIGHT_MODE_RAINBOW,
-    LIGHT_MODE_COUNT
-} light_mode_id_t;
-
-esp_err_t light_mode_manager_apply(light_engine_t *engine, light_mode_id_t mode_id);
-void      mode_manager_cycle(light_engine_t *engine);
+void mode_manager_next(void);
+void mode_manager_slot_saved(uint8_t slot);
+void mode_manager_slot_deleted(uint8_t slot);
+void mode_manager_load_dev(const char *src, size_t len);
+void mode_manager_exit_dev(void);
+void mode_manager_on_session_connect(void);
+void mode_manager_on_session_disconnect(void);
+mode_manager_state_t mode_manager_get_state(void);

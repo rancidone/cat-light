@@ -13,9 +13,20 @@ dependencies:
     source:
       type: idf
     version: 5.5.3
+  joltwallet/littlefs:
+    component_hash: dcea25bcef2de023f089f5f01e8d8c46ad1b8ffef75861ad5ffb4098555839df
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.20.4
 direct_dependencies:
 - georgik/lua
 - idf
-manifest_hash: fe065bda791edbcea4aeca7b79780422a2d3802a02d7b95fc08170e2c183a0b2
+- joltwallet/littlefs
+manifest_hash: 38839a4501d36cee74cd9be841ca43d9c312bfc4ebd38e28e09aba6d9cb340cc
 target: esp32
 version: 2.0.0
