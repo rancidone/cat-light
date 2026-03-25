@@ -2,7 +2,7 @@ Write a session handoff file for the current session using the template below
 
 ## Steps: ##
 1. Fill in every field based on what was accomplished in this session. Be specific — include exact file paths for every output, exact numbers discovered, and conditional logic established.
-2. Write the handoff to `./docs/summaries/handoff-[yyyy-MM-ddTHH:mm]-[topic].md`.
+2. Write the handoff to `./docs/summaries/handoff_YYYY-MM-DDTHH:MM_topic-slug.md` — underscores separate the three sections (type, timestamp, description); ISO date and hyphenated slug are unchanged.
 3. If a previous handoff file exists in `./docs/handoffs/`, move it to `./docs/handoffs/archive`.
 4. Tell me the file path of the new handoff and summarize what it contains.
 
