@@ -110,3 +110,6 @@ env/
 .clangd/
 .ccls-cache/
 compile_commands.json
+
+# Session handoffs
+docs/summaries/
