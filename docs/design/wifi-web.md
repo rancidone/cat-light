@@ -1,6 +1,6 @@
 ---
-status: ready
-date: 2026-03-24
+status: implemented
+date: 2026-04-02
 ---
 
 # Unit 5 Design — WiFi & Web Server
@@ -51,8 +51,8 @@ Boot
 | PUT | `/api/scripts/:slot` | Write script to slot |
 | DELETE | `/api/scripts/:slot` | Clear slot |
 | PATCH | `/api/scripts/:slot/name` | Rename script (triggers `mode_manager_slot_saved`) |
-| GET | `/api/modes` | List available modes (built-ins + saved slots + dev) |
-| POST | `/api/modes/active` | Switch active mode |
+| GET | `/api/modes` | Return state, active index, and available modes (built-ins + saved slots + dev) |
+| POST | `/api/modes/active` | Switch active mode by JSON body `{ "index": N }` |
 | POST | `/api/dev/load` | Load script into dev slot, enter dev mode |
 | POST | `/api/dev/exit` | Exit dev mode |
 | GET | `/api/config` | Read config (brightness, hostname) |

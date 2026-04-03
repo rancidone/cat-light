@@ -7,6 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/timers.h"
+#include "freertos/semphr.h"
 #include "esp_random.h"
 #include <string.h>
 #include <math.h>
@@ -26,7 +27,7 @@ typedef enum {
 
 typedef struct {
     mode_kind_t  kind;
-    const char  *name;
+    char         name[MODE_MANAGER_NAME_MAX];
     uint8_t      slot;
     void (*builtin_tick)(light_frame_t *frame, uint32_t dt_ms);
 } mode_entry_t;
@@ -40,11 +41,13 @@ typedef enum {
     MM_CMD_SESSION_CONNECT,
     MM_CMD_SESSION_DISCONNECT,
     MM_CMD_DEV_TIMEOUT,
+    MM_CMD_SET_ACTIVE,
 } mm_cmd_type_t;
 
 typedef struct {
     mm_cmd_type_t type;
     uint8_t       slot;
+    uint8_t       index;
     char         *dev_src;
     size_t        dev_src_len;
 } mm_cmd_t;
@@ -62,6 +65,7 @@ static int           s_dev_idx     = -1;
 
 static QueueHandle_t   s_cmd_queue         = NULL;
 static TimerHandle_t   s_dev_timeout_timer = NULL;
+static SemaphoreHandle_t s_state_mutex     = NULL;
 
 static uint32_t s_now_ms = 0;
 
@@ -171,6 +175,52 @@ static void activate_mode(int idx)
     }
 }
 
+static void set_mode_name(mode_entry_t *mode, const char *name)
+{
+    if (!mode) return;
+    if (!name) {
+        mode->name[0] = '\0';
+        return;
+    }
+    strncpy(mode->name, name, sizeof(mode->name) - 1);
+    mode->name[sizeof(mode->name) - 1] = '\0';
+}
+
+static void refresh_saved_mode_name(uint8_t slot, mode_entry_t *mode)
+{
+    persistence_script_meta_t meta[10];
+    uint8_t count = 0;
+
+    set_mode_name(mode, "");
+    if (persistence_script_list(meta, 10, &count) != ESP_OK) {
+        return;
+    }
+
+    for (uint8_t i = 0; i < count; i++) {
+        if (meta[i].slot == slot) {
+            set_mode_name(mode, meta[i].name);
+            return;
+        }
+    }
+}
+
+static void switch_to_mode(int idx)
+{
+    if (idx < 0 || idx >= s_mode_count) {
+        return;
+    }
+
+    if (idx == s_dev_idx) {
+        s_state = MM_STATE_DEV;
+        xTimerStop(s_dev_timeout_timer, 0);
+    } else {
+        s_state = MM_STATE_NORMAL;
+        xTimerStop(s_dev_timeout_timer, 0);
+    }
+
+    activate_mode(idx);
+}
+
 /* -------------------------------------------------------------------------
  * Dev timeout timer callback
  * -------------------------------------------------------------------------*/
@@ -186,32 +236,31 @@ static void dev_timeout_cb(TimerHandle_t t)
  * -------------------------------------------------------------------------*/
 static void handle_cmd(mm_cmd_t *cmd)
 {
+    xSemaphoreTake(s_state_mutex, portMAX_DELAY);
+
     switch (cmd->type) {
 
     case MM_CMD_NEXT:
         if (s_state == MM_STATE_DEV) break;
-        s_active_idx = (s_active_idx + 1) % s_mode_count;
-        activate_mode(s_active_idx);
+        switch_to_mode((s_active_idx + 1) % s_mode_count);
         break;
 
     case MM_CMD_LOAD_DEV:
         if (s_dev_idx < 0) {
             if (s_mode_count < MAX_MODES) {
                 s_modes[s_mode_count].kind         = MODE_KIND_SCRIPT;
-                s_modes[s_mode_count].name         = "Dev";
+                set_mode_name(&s_modes[s_mode_count], "Dev");
                 s_modes[s_mode_count].slot         = 0;
                 s_modes[s_mode_count].builtin_tick = NULL;
                 s_dev_idx = s_mode_count;
                 s_mode_count++;
             }
         }
-        s_active_idx = s_dev_idx;
         scripting_engine_stop();
         scripting_engine_load(cmd->dev_src, cmd->dev_src_len);
         free(cmd->dev_src);
         cmd->dev_src = NULL;
-        s_state = MM_STATE_DEV;
-        xTimerStop(s_dev_timeout_timer, 0);
+        switch_to_mode(s_dev_idx);
         break;
 
     case MM_CMD_EXIT_DEV:
@@ -223,10 +272,7 @@ static void handle_cmd(mm_cmd_t *cmd)
             s_mode_count--;
             s_dev_idx = -1;
         }
-        s_active_idx = 0;
-        s_state = MM_STATE_NORMAL;
-        activate_mode(0);
-        xTimerStop(s_dev_timeout_timer, 0);
+        switch_to_mode(0);
         break;
 
     case MM_CMD_SLOT_SAVED: {
@@ -246,11 +292,14 @@ static void handle_cmd(mm_cmd_t *cmd)
                     if (s_active_idx >= insert_pos) s_active_idx++;
                 }
                 s_modes[insert_pos].kind         = MODE_KIND_SCRIPT;
-                s_modes[insert_pos].name         = "";
+                set_mode_name(&s_modes[insert_pos], "");
                 s_modes[insert_pos].slot         = cmd->slot;
                 s_modes[insert_pos].builtin_tick = NULL;
+                refresh_saved_mode_name(cmd->slot, &s_modes[insert_pos]);
                 s_mode_count++;
             }
+        } else {
+            refresh_saved_mode_name(cmd->slot, &s_modes[found]);
         }
         break;
     }
@@ -275,7 +324,7 @@ static void handle_cmd(mm_cmd_t *cmd)
         if (s_dev_idx > found) s_dev_idx--;
         if (was_active) {
             s_active_idx = (found < s_mode_count) ? found : 0;
-            activate_mode(s_active_idx);
+            switch_to_mode(s_active_idx);
         } else if (s_active_idx > found) {
             s_active_idx--;
         }
@@ -294,12 +343,18 @@ static void handle_cmd(mm_cmd_t *cmd)
 
     case MM_CMD_DEV_TIMEOUT:
         if (s_state == MM_STATE_DEV) {
-            s_state = MM_STATE_NORMAL;
-            s_active_idx = 0;
-            activate_mode(0);
+            switch_to_mode(0);
+        }
+        break;
+
+    case MM_CMD_SET_ACTIVE:
+        if (cmd->index < s_mode_count) {
+            switch_to_mode(cmd->index);
         }
         break;
     }
+
+    xSemaphoreGive(s_state_mutex);
 }
 
 /* -------------------------------------------------------------------------
@@ -329,26 +384,34 @@ static void mode_manager_tick(light_frame_t *frame, uint32_t dt_ms, void *ctx)
         handle_cmd(&cmd);
     }
 
+    xSemaphoreTake(s_state_mutex, portMAX_DELAY);
+
     /* Button ownership */
     if (button_pressed() && s_state == MM_STATE_NORMAL) {
-        s_active_idx = (s_active_idx + 1) % s_mode_count;
-        activate_mode(s_active_idx);
+        switch_to_mode((s_active_idx + 1) % s_mode_count);
     }
 
-    switch (s_state) {
+    mode_manager_state_t state = s_state;
+    mode_entry_t active_mode = s_modes[s_active_idx];
+    uint32_t now_ms = s_now_ms;
+
+    xSemaphoreGive(s_state_mutex);
+
+    switch (state) {
     case MM_STATE_ERROR:
         error_tick(frame, dt_ms);
         return;
 
     case MM_STATE_NORMAL:
     case MM_STATE_DEV: {
-        mode_entry_t *m = &s_modes[s_active_idx];
-        if (m->kind == MODE_KIND_BUILTIN) {
-            m->builtin_tick(frame, dt_ms);
+        if (active_mode.kind == MODE_KIND_BUILTIN) {
+            active_mode.builtin_tick(frame, dt_ms);
         } else {
-            scripting_engine_tick(frame, s_now_ms, dt_ms);
+            scripting_engine_tick(frame, now_ms, dt_ms);
             if (scripting_engine_status() == SCRIPTING_STATUS_ERROR) {
+                xSemaphoreTake(s_state_mutex, portMAX_DELAY);
                 s_state = MM_STATE_ERROR;
+                xSemaphoreGive(s_state_mutex);
             }
         }
         break;
@@ -366,11 +429,19 @@ void mode_manager_init(void)
     s_dev_timeout_timer = xTimerCreate("dev_timeout",
                                         pdMS_TO_TICKS(30 * 60 * 1000),
                                         pdFALSE, NULL, dev_timeout_cb);
+    s_state_mutex = xSemaphoreCreateMutex();
+    configASSERT(s_cmd_queue != NULL);
+    configASSERT(s_dev_timeout_timer != NULL);
+    configASSERT(s_state_mutex != NULL);
 
-    s_modes[0] = (mode_entry_t){ MODE_KIND_BUILTIN, "Fade",        0, builtin_fade_tick       };
-    s_modes[1] = (mode_entry_t){ MODE_KIND_BUILTIN, "Spooky",      0, builtin_spooky_tick     };
-    s_modes[2] = (mode_entry_t){ MODE_KIND_BUILTIN, "Rainbow",     0, builtin_rainbow_tick    };
-    s_modes[3] = (mode_entry_t){ MODE_KIND_BUILTIN, "Night Light", 0, builtin_nightlight_tick };
+    s_modes[0] = (mode_entry_t){ MODE_KIND_BUILTIN, "", 0, builtin_fade_tick       };
+    s_modes[1] = (mode_entry_t){ MODE_KIND_BUILTIN, "", 0, builtin_spooky_tick     };
+    s_modes[2] = (mode_entry_t){ MODE_KIND_BUILTIN, "", 0, builtin_rainbow_tick    };
+    s_modes[3] = (mode_entry_t){ MODE_KIND_BUILTIN, "", 0, builtin_nightlight_tick };
+    set_mode_name(&s_modes[0], "Fade");
+    set_mode_name(&s_modes[1], "Spooky");
+    set_mode_name(&s_modes[2], "Rainbow");
+    set_mode_name(&s_modes[3], "Night Light");
     s_mode_count = 4;
 
     persistence_script_meta_t meta[10];
@@ -378,7 +449,7 @@ void mode_manager_init(void)
     persistence_script_list(meta, 10, &count);
     for (int i = 0; i < count && s_mode_count < MAX_MODES - 1; i++) {
         s_modes[s_mode_count].kind         = MODE_KIND_SCRIPT;
-        s_modes[s_mode_count].name         = "";
+        set_mode_name(&s_modes[s_mode_count], meta[i].name);
         s_modes[s_mode_count].slot         = meta[i].slot;
         s_modes[s_mode_count].builtin_tick = NULL;
         s_mode_count++;
@@ -448,5 +519,49 @@ void mode_manager_on_session_disconnect(void)
 
 mode_manager_state_t mode_manager_get_state(void)
 {
-    return s_state;
+    xSemaphoreTake(s_state_mutex, portMAX_DELAY);
+    mode_manager_state_t state = s_state;
+    xSemaphoreGive(s_state_mutex);
+    return state;
+}
+
+esp_err_t mode_manager_list_modes(mode_manager_mode_info_t *out, uint8_t max_count,
+                                  uint8_t *count_out, uint8_t *active_index_out)
+{
+    if (!out || !count_out) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    xSemaphoreTake(s_state_mutex, portMAX_DELAY);
+    uint8_t count = (s_mode_count < max_count) ? (uint8_t)s_mode_count : max_count;
+    for (uint8_t i = 0; i < count; i++) {
+        out[i].index = i;
+        out[i].slot = s_modes[i].slot;
+        out[i].active = (i == s_active_idx);
+        out[i].source = (i == s_dev_idx) ? MODE_MANAGER_SOURCE_DEV :
+                        (s_modes[i].kind == MODE_KIND_BUILTIN) ? MODE_MANAGER_SOURCE_BUILTIN :
+                        MODE_MANAGER_SOURCE_SCRIPT;
+        strncpy(out[i].name, s_modes[i].name, sizeof(out[i].name) - 1);
+        out[i].name[sizeof(out[i].name) - 1] = '\0';
+    }
+    if (active_index_out) {
+        *active_index_out = (uint8_t)s_active_idx;
+    }
+    *count_out = count;
+    xSemaphoreGive(s_state_mutex);
+
+    return ESP_OK;
+}
+
+esp_err_t mode_manager_set_active(uint8_t index)
+{
+    xSemaphoreTake(s_state_mutex, portMAX_DELAY);
+    bool valid = index < s_mode_count;
+    xSemaphoreGive(s_state_mutex);
+    if (!valid) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    mm_cmd_t cmd = { .type = MM_CMD_SET_ACTIVE, .index = index };
+    return (xQueueSend(s_cmd_queue, &cmd, 0) == pdTRUE) ? ESP_OK : ESP_ERR_TIMEOUT;
 }

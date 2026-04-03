@@ -1,6 +1,6 @@
 ---
-status: ready
-date: 2026-03-24
+status: implemented
+date: 2026-04-02
 ---
 
 # Unit 4 Design — Persistence & Storage

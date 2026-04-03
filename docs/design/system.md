@@ -1,6 +1,6 @@
 ---
-status: draft
-date: 2026-03-24
+status: implemented
+date: 2026-04-02
 discovery: ../discovery/v2-firmware-discovery.md
 ---
 
@@ -45,11 +45,11 @@ Light Engine
 
 | Unit | Status | Document |
 |------|--------|----------|
-| Light Engine & Render Loop | ready | `light-engine.md` |
-| Scripting Engine | ready | `scripting-engine.md` |
-| Mode Manager | ready | `mode-manager.md` |
-| Persistence & Storage | ready | `persistence.md` |
-| WiFi & Web Server | ready | `wifi-web.md` |
+| Light Engine & Render Loop | implemented | `light-engine.md` |
+| Scripting Engine | implemented | `scripting-engine.md` |
+| Mode Manager | implemented | `mode-manager.md` |
+| Persistence & Storage | implemented | `persistence.md` |
+| WiFi & Web Server | implemented | `wifi-web.md` |
 
 ---
 
