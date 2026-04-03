@@ -1,6 +1,6 @@
 ---
-status: ready
-date: 2026-03-24
+status: implemented
+date: 2026-04-02
 ---
 
 # Unit 3 Design — Mode Manager
@@ -84,6 +84,9 @@ void mode_manager_exit_dev(void);
 void mode_manager_on_session_connect(void);
 void mode_manager_on_session_disconnect(void);
 mode_manager_state_t mode_manager_get_state(void);
+esp_err_t mode_manager_list_modes(mode_manager_mode_info_t *out, uint8_t max_count,
+                                  uint8_t *count_out, uint8_t *active_index_out);
+esp_err_t mode_manager_set_active(uint8_t index);
 ```
 
 ---

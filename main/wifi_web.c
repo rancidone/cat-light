@@ -299,23 +299,96 @@ static esp_err_t api_script_patch_name(httpd_req_t *req)
  * -------------------------------------------------------------------------*/
 static esp_err_t api_modes_get(httpd_req_t *req)
 {
+    mode_manager_mode_info_t modes[16];
+    uint8_t count = 0;
+    uint8_t active_index = 0;
+    if (mode_manager_list_modes(modes, 16, &count, &active_index) != ESP_OK) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Mode snapshot failed");
+        return ESP_OK;
+    }
+
     mode_manager_state_t state = mode_manager_get_state();
     const char *state_str = (state == MM_STATE_DEV) ? "dev" :
                             (state == MM_STATE_ERROR) ? "error" : "normal";
-    char buf[64];
-    snprintf(buf, sizeof(buf), "{\"state\":\"%s\"}", state_str);
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON *arr = cJSON_CreateArray();
+    cJSON_AddStringToObject(root, "state", state_str);
+    cJSON_AddNumberToObject(root, "active_index", active_index);
+    for (uint8_t i = 0; i < count; i++) {
+        cJSON *obj = cJSON_CreateObject();
+        const char *source = (modes[i].source == MODE_MANAGER_SOURCE_DEV) ? "dev" :
+                             (modes[i].source == MODE_MANAGER_SOURCE_BUILTIN) ? "builtin" :
+                             "script";
+        cJSON_AddNumberToObject(obj, "index", modes[i].index);
+        cJSON_AddStringToObject(obj, "name", modes[i].name);
+        cJSON_AddStringToObject(obj, "source", source);
+        if (modes[i].source != MODE_MANAGER_SOURCE_BUILTIN) {
+            cJSON_AddNumberToObject(obj, "slot", modes[i].slot);
+        }
+        cJSON_AddBoolToObject(obj, "active", modes[i].active);
+        cJSON_AddItemToArray(arr, obj);
+    }
+    cJSON_AddItemToObject(root, "modes", arr);
+
+    char *json = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
     httpd_resp_set_type(req, "application/json");
-    httpd_resp_sendstr(req, buf);
+    httpd_resp_sendstr(req, json ? json : "{}");
+    free(json);
     return ESP_OK;
 }
 
 /* -------------------------------------------------------------------------
- * API: POST /api/modes/active → 501
+ * API: POST /api/modes/active
  * -------------------------------------------------------------------------*/
 static esp_err_t api_modes_active_post(httpd_req_t *req)
 {
-    httpd_resp_set_status(req, "501 Not Implemented");
-    httpd_resp_sendstr(req, "{\"error\":\"not implemented\"}");
+    int total = req->content_len;
+    if (total <= 0 || total > 128) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad body");
+        return ESP_OK;
+    }
+
+    char *body = malloc(total + 1);
+    if (!body) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OOM");
+        return ESP_OK;
+    }
+    int received = httpd_req_recv(req, body, total);
+    if (received <= 0) {
+        free(body);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Recv failed");
+        return ESP_OK;
+    }
+    body[received] = '\0';
+
+    cJSON *root = cJSON_Parse(body);
+    free(body);
+    if (!root) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad JSON");
+        return ESP_OK;
+    }
+
+    cJSON *index_item = cJSON_GetObjectItem(root, "index");
+    if (!index_item || !cJSON_IsNumber(index_item)) {
+        cJSON_Delete(root);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing index");
+        return ESP_OK;
+    }
+
+    esp_err_t err = mode_manager_set_active((uint8_t)index_item->valueint);
+    cJSON_Delete(root);
+    if (err == ESP_ERR_INVALID_ARG) {
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown mode");
+        return ESP_OK;
+    }
+    if (err != ESP_OK) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Mode switch failed");
+        return ESP_OK;
+    }
+
+    httpd_resp_sendstr(req, "{\"ok\":true}");
     return ESP_OK;
 }
 
