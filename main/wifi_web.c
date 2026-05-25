@@ -4,6 +4,7 @@
 #include "mode_manager.h"
 #include "light_engine.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -11,6 +12,9 @@
 #include "cJSON.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "freertos/task.h"
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,9 +51,18 @@ static esp_err_t static_asset_handler(httpd_req_t *req)
 {
     char path[640];
     const char *uri = req->uri;
-    /* skip leading slash, default to index.html */
-    if (strcmp(uri, "/") == 0) uri = "/index.html";
-    snprintf(path, sizeof(path), "/littlefs/www%s", uri);
+    /* redirect captive-portal probes and bare root to index.html */
+    if (strcmp(uri, "/") == 0 ||
+        strncmp(uri, "/generate_204", 13) == 0 ||
+        strncmp(uri, "/hotspot-detect", 15) == 0 ||
+        strncmp(uri, "/connecttest", 12) == 0 ||
+        strncmp(uri, "/ncsi", 5) == 0) {
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "http://192.168.4.1/index.html");
+        httpd_resp_send(req, NULL, 0);
+        return ESP_OK;
+    }
+    snprintf(path, sizeof(path), "/littlefs%s", uri);
 
     FILE *f = fopen(path, "r");
     if (!f) {
@@ -533,26 +546,24 @@ static esp_err_t api_wifi_credentials(httpd_req_t *req)
         return ESP_OK;
     }
 
-    const char *ssid = cJSON_GetStringValue(cJSON_GetObjectItem(root, "ssid"));
-    const char *pass = cJSON_GetStringValue(cJSON_GetObjectItem(root, "password"));
-    if (!ssid || !pass) {
+    const char *ssid_val = cJSON_GetStringValue(cJSON_GetObjectItem(root, "ssid"));
+    const char *pass_val = cJSON_GetStringValue(cJSON_GetObjectItem(root, "password"));
+    if (!ssid_val || !pass_val) {
         cJSON_Delete(root);
         httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing ssid/password");
         return ESP_OK;
     }
-    persistence_wifi_set_credentials(ssid, pass);
+    /* Copy before freeing cJSON tree */
+    char ssid[64], pass[64];
+    strncpy(ssid, ssid_val, sizeof(ssid) - 1); ssid[sizeof(ssid) - 1] = '\0';
+    strncpy(pass, pass_val, sizeof(pass) - 1); pass[sizeof(pass) - 1] = '\0';
     cJSON_Delete(root);
 
-    /* Note: client will lose connection on reconnect */
-    httpd_resp_sendstr(req, "{\"message\":\"reconnecting\"}");
+    persistence_wifi_set_credentials(ssid, pass);
 
-    /* Schedule reconnect — simple approach: just reconnect inline */
-    esp_wifi_disconnect();
-    wifi_config_t wifi_cfg = {0};
-    strncpy((char *)wifi_cfg.sta.ssid,     ssid, sizeof(wifi_cfg.sta.ssid) - 1);
-    strncpy((char *)wifi_cfg.sta.password, pass, sizeof(wifi_cfg.sta.password) - 1);
-    esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
-    esp_wifi_connect();
+    httpd_resp_sendstr(req, "{\"message\":\"saved\"}");
+    vTaskDelay(pdMS_TO_TICKS(100)); /* let response flush before reboot */
+    esp_restart();
 
     return ESP_OK;
 }
@@ -565,6 +576,7 @@ static void start_http_server(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
     config.uri_match_fn = httpd_uri_match_wildcard;
+    config.max_uri_handlers = 16;
 
     if (httpd_start(&s_server, &config) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start HTTP server");
@@ -623,6 +635,60 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
 }
 
 /* -------------------------------------------------------------------------
+ * Captive-portal DNS server — answers every query with 192.168.4.1
+ * -------------------------------------------------------------------------*/
+static void dns_server_task(void *arg)
+{
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sock < 0) { vTaskDelete(NULL); return; }
+
+    struct sockaddr_in addr = {
+        .sin_family      = AF_INET,
+        .sin_port        = htons(53),
+        .sin_addr.s_addr = htonl(INADDR_ANY),
+    };
+    if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        close(sock); vTaskDelete(NULL); return;
+    }
+
+    uint8_t buf[512];
+    struct sockaddr_in client;
+    socklen_t client_len = sizeof(client);
+
+    while (1) {
+        int len = recvfrom(sock, buf, sizeof(buf), 0,
+                           (struct sockaddr *)&client, &client_len);
+        if (len < 12) continue;
+
+        /* Build a minimal DNS response: copy the query, set QR bit, add answer */
+        uint8_t resp[512];
+        memcpy(resp, buf, len);
+        resp[2] = 0x81; resp[3] = 0x80;  /* QR=1, OPCODE=0, AA=1, RCODE=0 */
+        resp[6] = 0x00; resp[7] = 0x01;  /* ANCOUNT = 1 */
+        resp[8] = 0x00; resp[9] = 0x00;  /* NSCOUNT = 0 */
+        resp[10] = 0x00; resp[11] = 0x00; /* ARCOUNT = 0 */
+
+        /* Append answer: pointer to question name, type A, class IN, TTL, RDATA */
+        int pos = len;
+        resp[pos++] = 0xc0; resp[pos++] = 0x0c; /* name pointer to offset 12 */
+        resp[pos++] = 0x00; resp[pos++] = 0x01; /* type A */
+        resp[pos++] = 0x00; resp[pos++] = 0x01; /* class IN */
+        resp[pos++] = 0x00; resp[pos++] = 0x00;
+        resp[pos++] = 0x00; resp[pos++] = 0x3c; /* TTL 60s */
+        resp[pos++] = 0x00; resp[pos++] = 0x04; /* RDLENGTH 4 */
+        resp[pos++] = 192; resp[pos++] = 168;
+        resp[pos++] = 4;   resp[pos++] = 1;     /* 192.168.4.1 */
+
+        sendto(sock, resp, pos, 0, (struct sockaddr *)&client, client_len);
+    }
+}
+
+static void start_dns_server(void)
+{
+    xTaskCreatePinnedToCore(dns_server_task, "dns_server", 4096, NULL, 5, NULL, PRO_CPU_NUM);
+}
+
+/* -------------------------------------------------------------------------
  * SoftAP mode
  * -------------------------------------------------------------------------*/
 static void start_softap(void)
@@ -644,6 +710,7 @@ static void start_softap(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_LOGI(TAG, "SoftAP started: SSID=cat-light PW=catlight1");
+    start_dns_server();
     start_http_server();
 }
 

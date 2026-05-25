@@ -165,7 +165,7 @@ void light_engine_set_mode_tick(mode_tick_fn_t fn, void *ctx)
 void light_engine_set_brightness(float brightness)
 {
     xSemaphoreTake(s_engine.mutex, portMAX_DELAY);
-    if (brightness < 0.0f) brightness = 0.0f;
+    if (brightness < 0.001f) brightness = 0.001f;
     if (brightness > 1.0f) brightness = 1.0f;
     s_engine.brightness = brightness;
     xSemaphoreGive(s_engine.mutex);

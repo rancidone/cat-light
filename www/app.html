@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cat Light</title>
+  <link rel="stylesheet" href="/pico.min.css">
+  <style>
+    nav.top { border-bottom: 1px solid var(--pico-muted-border-color); margin-bottom: 1.5rem; }
+    .mode-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+    .mode-card { cursor: pointer; padding: 0.75rem 1rem; border-radius: var(--pico-border-radius); border: 1px solid var(--pico-muted-border-color); display: flex; justify-content: space-between; align-items: center; }
+    .mode-card:hover { border-color: var(--pico-primary); }
+    .mode-card.active { border-color: var(--pico-primary); background: var(--pico-primary-background); }
+    .slot-list { display: flex; flex-direction: column; gap: 0.25rem; }
+    .slot-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: var(--pico-border-radius); border: 1px solid transparent; }
+    .slot-item:hover { background: var(--pico-secondary-background); }
+    .slot-item.selected { border-color: var(--pico-primary); }
+    .dev-badge { display: inline-block; background: var(--pico-color-amber-500); color: #000; padding: 0.1rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; vertical-align: middle; }
+    .muted { color: var(--pico-muted-color); }
+    .msg-ok { color: var(--pico-color-green-500); }
+    .msg-err { color: var(--pico-color-red-500); }
+    .scripts-grid { display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; }
+    @media (max-width: 640px) { .scripts-grid { grid-template-columns: 1fr; } }
+  </style>
+  <script src="/alpine.min.js" defer></script>
+</head>
+<body>
+  <div x-data="app()" x-init="init()">
+
+    <nav class="container-fluid top">
+      <ul>
+        <li><strong>Cat Light</strong></li>
+      </ul>
+      <ul>
+        <li><a href="#" @click.prevent="nav('control')" :aria-current="page==='control'?'page':null">Control</a></li>
+        <li><a href="#" @click.prevent="nav('scripts')" :aria-current="page==='scripts'?'page':null">Scripts</a></li>
+        <li><a href="#" @click.prevent="nav('device')"  :aria-current="page==='device'?'page':null">Device</a></li>
+      </ul>
+    </nav>
+
+    <main class="container">
+
+      <!-- ── Control ────────────────────────────────────────────── -->
+      <section x-show="page==='control'">
+        <hgroup>
+          <h2>Control <span x-show="modesState==='dev'" class="dev-badge">DEV MODE</span></h2>
+          <p class="muted">Select a mode to activate it.</p>
+        </hgroup>
+
+        <p x-show="modesLoading" aria-busy="true">Loading&hellip;</p>
+        <p x-show="modesError" x-text="modesError" class="msg-err"></p>
+
+        <div class="mode-grid" x-show="!modesLoading">
+          <template x-for="m in modes" :key="m.index">
+            <div class="mode-card" :class="m.active ? 'active' : ''" @click="setMode(m.index)">
+              <span>
+                <span x-text="m.name"></span>
+                <small class="muted">
+                  &nbsp;·&nbsp;<span x-text="m.source"></span>
+                  <span x-show="m.source==='script'" x-text="' · slot ' + m.slot"></span>
+                  <span x-show="m.source==='dev'"> &nbsp;<span class="dev-badge">RAM</span></span>
+                </small>
+              </span>
+              <span x-show="m.active">&#10003;</span>
+            </div>
+          </template>
+        </div>
+
+        <button x-show="modesState==='dev'" class="secondary outline" style="margin-top:1rem"
+                @click="exitDev()">Exit dev mode</button>
+      </section>
+
+      <!-- ── Scripts ───────────────────────────────────────────── -->
+      <section x-show="page==='scripts'">
+        <h2>Scripts</h2>
+        <p x-show="scriptsLoading" aria-busy="true">Loading&hellip;</p>
+
+        <div class="scripts-grid" x-show="!scriptsLoading">
+
+          <div>
+            <p><strong>Slots</strong></p>
+            <div class="slot-list">
+              <template x-for="s in slots" :key="s.slot">
+                <div class="slot-item" :class="selectedSlot===s.slot?'selected':''" @click="selectSlot(s)">
+                  <span x-text="s.slot + '. '"></span>
+                  <span x-show="s.occupied" x-text="s.name"></span>
+                  <span x-show="!s.occupied" class="muted">Empty</span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div>
+            <p x-show="selectedSlot===null" class="muted">Select a slot to edit.</p>
+
+            <div x-show="selectedSlot!==null">
+              <label>
+                Name
+                <input type="text" x-model="scriptName" placeholder="Script name">
+              </label>
+              <label>
+                Source
+                <textarea x-model="scriptSrc" rows="14" placeholder="-- Lua script"
+                          style="font-family:monospace;font-size:0.875rem"></textarea>
+              </label>
+              <p x-show="scriptMsg" x-text="scriptMsg"
+                 :class="scriptErr ? 'msg-err' : 'msg-ok'"></p>
+              <div class="grid">
+                <button class="secondary" @click="runInDev()">Run in dev mode</button>
+                <button @click="saveScript()">Save to slot</button>
+              </div>
+              <div style="margin-top:0.5rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+                <button x-show="modesState==='dev'" class="outline secondary"
+                        @click="exitDev()">Exit dev mode</button>
+                <button class="outline contrast" @click="deleteScript()"
+                        x-show="slots.find(s=>s.slot===selectedSlot)?.occupied">Delete slot</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── Device ────────────────────────────────────────────── -->
+      <section x-show="page==='device'">
+        <h2>Device</h2>
+        <p x-show="deviceLoading" aria-busy="true">Loading&hellip;</p>
+
+        <div x-show="!deviceLoading">
+          <label>
+            Brightness&nbsp;<span x-text="(brightness / 10).toFixed(1) + '%'"></span>
+            <input type="range" x-model.number="brightness" min="1" max="500" step="1">
+          </label>
+          <label>
+            Hostname
+            <input type="text" x-model="hostname">
+          </label>
+          <p x-show="deviceMsg" x-text="deviceMsg"
+             :class="deviceErr ? 'msg-err' : 'msg-ok'"></p>
+          <button @click="saveConfig()">Save</button>
+
+          <hr style="margin:2rem 0">
+
+          <details>
+            <summary>Reconfigure WiFi</summary>
+            <div x-show="!wifiSubmitted" style="margin-top:1rem">
+              <p><small>Warning: saving new credentials will disconnect this session immediately. You may need to rejoin your network and visit a new address.</small></p>
+              <label>
+                Network (SSID)
+                <input type="text" x-model="wifiSsid" autocomplete="off">
+              </label>
+              <label>
+                Password
+                <input type="password" x-model="wifiPass" autocomplete="current-password">
+              </label>
+              <p x-show="wifiError" x-text="wifiError" class="msg-err"></p>
+              <button @click="submitWifi()" :aria-busy="wifiLoading" :disabled="wifiLoading">
+                Save WiFi credentials
+              </button>
+            </div>
+            <div x-show="wifiSubmitted" style="margin-top:1rem">
+              <p>Credentials saved. This page will stop responding shortly.</p>
+              <ol>
+                <li>Rejoin your home WiFi network</li>
+                <li>Visit <strong><a href="http://cat-light.local/app.html">http://cat-light.local/app.html</a></strong></li>
+              </ol>
+            </div>
+          </details>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+  function app() {
+    return {
+      page: 'control',
+
+      modes: [], modesState: 'normal', activeIndex: 0,
+      modesLoading: false, modesError: '',
+
+      slots: [], selectedSlot: null,
+      scriptSrc: '', scriptName: '', scriptMsg: '', scriptErr: false,
+      scriptsLoading: false, isDirty: false,
+
+      brightness: 500, hostname: '',
+      deviceLoading: false, deviceMsg: '', deviceErr: false,
+
+      wifiSsid: '', wifiPass: '',
+      wifiLoading: false, wifiError: '', wifiSubmitted: false,
+
+      async init() {
+        await this.loadModes();
+        this.$watch('scriptSrc',  () => { if (this.selectedSlot !== null) this.isDirty = true; });
+        this.$watch('scriptName', () => { if (this.selectedSlot !== null) this.isDirty = true; });
+      },
+
+      nav(p) {
+        if (this.page === 'scripts' && this.isDirty) {
+          if (!confirm('You have unsaved changes. Leave anyway?')) return;
+        }
+        this.isDirty = false;
+        this.page = p;
+        if (p === 'control') this.loadModes();
+        if (p === 'scripts') this.loadSlots();
+        if (p === 'device')  this.loadConfig();
+      },
+
+      // ── Control ──────────────────────────────────────────────
+
+      async loadModes() {
+        this.modesLoading = true;
+        this.modesError = '';
+        try {
+          const d = await fetch('/api/modes').then(r => r.json());
+          this.modes = d.modes;
+          this.modesState = d.state;
+          this.activeIndex = d.active_index;
+        } catch {
+          this.modesError = 'Could not load modes.';
+        } finally {
+          this.modesLoading = false;
+        }
+      },
+
+      async setMode(index) {
+        this.modesError = '';
+        try {
+          const r = await fetch('/api/modes/active', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ index })
+          });
+          if (!r.ok) throw new Error();
+          await this.loadModes();
+        } catch {
+          this.modesError = 'Mode switch failed.';
+        }
+      },
+
+      async exitDev() {
+        await fetch('/api/dev/exit', { method: 'POST' });
+        await this.loadModes();
+        this.scriptMsg = 'Exited dev mode.';
+        this.scriptErr = false;
+      },
+
+      // ── Scripts ───────────────────────────────────────────────
+
+      async loadSlots() {
+        this.scriptsLoading = true;
+        try {
+          this.slots = await fetch('/api/scripts').then(r => r.json());
+        } catch {
+        } finally {
+          this.scriptsLoading = false;
+        }
+      },
+
+      async selectSlot(s) {
+        if (this.isDirty && !confirm('You have unsaved changes. Load a different slot anyway?')) return;
+        this.selectedSlot = s.slot;
+        this.isDirty = false;
+        this.scriptMsg = '';
+        this.scriptErr = false;
+        if (s.occupied) {
+          const d = await fetch(`/api/scripts/${s.slot}`).then(r => r.json());
+          this.scriptSrc  = d.src;
+          this.scriptName = d.name;
+        } else {
+          this.scriptSrc  = '';
+          this.scriptName = '';
+        }
+      },
+
+      async runInDev() {
+        try {
+          await fetch('/api/dev/load', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ src: this.scriptSrc })
+          });
+          await this.loadModes();
+          this.scriptMsg = 'Running in dev mode — RAM only, not saved.';
+          this.scriptErr = false;
+        } catch {
+          this.scriptMsg = 'Failed to load in dev mode.';
+          this.scriptErr = true;
+        }
+      },
+
+      async saveScript() {
+        if (!this.scriptName) {
+          this.scriptMsg = 'Name is required.';
+          this.scriptErr = true;
+          return;
+        }
+        try {
+          await fetch(`/api/scripts/${this.selectedSlot}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: this.scriptName, src: this.scriptSrc })
+          });
+          await this.loadSlots();
+          this.isDirty   = false;
+          this.scriptMsg = `Saved to slot ${this.selectedSlot}.`;
+          this.scriptErr = false;
+        } catch {
+          this.scriptMsg = 'Save failed.';
+          this.scriptErr = true;
+        }
+      },
+
+      async deleteScript() {
+        await fetch(`/api/scripts/${this.selectedSlot}`, { method: 'DELETE' });
+        await this.loadSlots();
+        this.selectedSlot = null;
+        this.scriptSrc    = '';
+        this.scriptName   = '';
+        this.scriptMsg    = '';
+      },
+
+      // ── Device ────────────────────────────────────────────────
+
+      async loadConfig() {
+        this.deviceLoading = true;
+        try {
+          const d = await fetch('/api/config').then(r => r.json());
+          this.brightness = Math.round(d.brightness * 1000);
+          this.hostname   = d.hostname;
+        } catch {
+        } finally {
+          this.deviceLoading = false;
+        }
+      },
+
+      async saveConfig() {
+        this.deviceLoading = true;
+        this.deviceMsg = '';
+        try {
+          await fetch('/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brightness: this.brightness / 1000, hostname: this.hostname })
+          });
+          this.deviceMsg = 'Saved.';
+          this.deviceErr = false;
+        } catch {
+          this.deviceMsg = 'Save failed.';
+          this.deviceErr = true;
+        } finally {
+          this.deviceLoading = false;
+        }
+      },
+
+      async submitWifi() {
+        this.wifiLoading = true;
+        this.wifiError   = '';
+        try {
+          await fetch('/api/wifi/credentials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid: this.wifiSsid, password: this.wifiPass })
+          });
+          this.wifiSubmitted = true;
+        } catch {
+          this.wifiError = 'Failed to save. Try again.';
+        } finally {
+          this.wifiLoading = false;
+        }
+      }
+    }
+  }
+  </script>
+</body>
+</html>

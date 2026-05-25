@@ -1,5 +1,6 @@
 dependencies:
-  georgik/lua: "==5.4.7"
-  joltwallet/littlefs: "^1.14.8"
+  georgik/lua: ==5.4.7
+  joltwallet/littlefs: ^1.14.8
   idf:
-    version: ">=5.5.0"
+    version: '>=5.5.0'
+  espressif/cjson: ^1.7.19

@@ -1,4 +1,14 @@
 dependencies:
+  espressif/cjson:
+    component_hash: e788323270d90738662d66fffa910bfe1fba019bba087f01557e70c40485b469
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.7.19~2
   georgik/lua:
     component_hash: 1ab17ca24960f462aa403fc8d338c37c0cee4dbc308c7393c270746c6d979f97
     dependencies:
@@ -12,7 +22,7 @@ dependencies:
   idf:
     source:
       type: idf
-    version: 5.5.3
+    version: 6.0.0
   joltwallet/littlefs:
     component_hash: dcea25bcef2de023f089f5f01e8d8c46ad1b8ffef75861ad5ffb4098555839df
     dependencies:
@@ -24,9 +34,10 @@ dependencies:
       type: service
     version: 1.20.4
 direct_dependencies:
+- espressif/cjson
 - georgik/lua
 - idf
 - joltwallet/littlefs
-manifest_hash: 38839a4501d36cee74cd9be841ca43d9c312bfc4ebd38e28e09aba6d9cb340cc
+manifest_hash: f5ea306c493a1f11bf33208b39f2be99731abed6475577a96b0b93223529fd4a
 target: esp32
-version: 2.0.0
+version: 3.0.0

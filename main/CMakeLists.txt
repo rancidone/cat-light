@@ -4,5 +4,5 @@ idf_component_register(
          "wifi_web.c"
     INCLUDE_DIRS "."
     REQUIRES esp_driver_ledc esp_driver_gpio nvs_flash joltwallet__littlefs
-             georgik__lua esp_wifi esp_event esp_netif esp_http_server json
+             georgik__lua esp_wifi esp_event esp_netif esp_http_server
 )
