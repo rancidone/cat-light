@@ -1,0 +1,29 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "${workspaceFolder}/pocket", "build"],
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Flash",
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "${workspaceFolder}/pocket", "flash"],
+            "group": "build",
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "${workspaceFolder}/pocket", "clean"],
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
