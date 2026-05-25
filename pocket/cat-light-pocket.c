@@ -12,7 +12,7 @@
 /* SysTick runs at HCLK/8 = 6 MHz; DELAY_MS_TIME = 6000 ticks/ms */
 static inline uint32_t millis(void) { return funSysTick32() / DELAY_MS_TIME; }
 
-static int s_mode = MODE_FADE;
+static int s_mode = MODE_HEARTBEAT;
 
 static int button_pressed(void)
 {

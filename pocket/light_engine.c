@@ -14,8 +14,10 @@
 
 #define PWM_ARR 4799u
 
-static inline uint32_t duty(uint8_t val)   { return (uint32_t)val * PWM_ARR / 255u; }
-static inline uint32_t dutyf(float v)      { return (uint32_t)(v * PWM_ARR); }
+#define BRIGHTNESS 0.30f  /* 30% — 70% reduction */
+
+static inline uint32_t duty(uint8_t val)   { return (uint32_t)(val * BRIGHTNESS * PWM_ARR / 255u); }
+static inline uint32_t dutyf(float v)      { return (uint32_t)(v * BRIGHTNESS * 0.5f * PWM_ARR); }
 
 void light_engine_init(void)
 {
