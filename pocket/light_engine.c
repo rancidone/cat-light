@@ -39,10 +39,10 @@ void light_engine_init(void)
     /* TIM2: CH2 (PWM_B / PC2) and CH4 (PWM_R / PC1) */
     TIM2->PSC    = 0;
     TIM2->ATRLR  = PWM_ARR;
-    /* CH2 PWM mode 1, preload enable */
-    TIM2->CHCTLR1 = (0x6u << 13) | (1u << 11); /* OC2M=110, OC2PE=1 */
-    /* CH4 PWM mode 1, preload enable */
-    TIM2->CHCTLR2 = (0x6u << 13) | (1u << 11); /* OC4M=110, OC4PE=1 */
+    /* CH2 PWM mode 1, preload enable — OC2M at [14:12], OC2PE at [11] */
+    TIM2->CHCTLR1 = (0x6u << 12) | (1u << 11);
+    /* CH4 PWM mode 1, preload enable — OC4M at [14:12], OC4PE at [11] */
+    TIM2->CHCTLR2 = (0x6u << 12) | (1u << 11);
     TIM2->CCER   = TIM_CC2E | TIM_CC4E;
     TIM2->CH2CVR = 0;
     TIM2->CH4CVR = 0;
@@ -52,8 +52,9 @@ void light_engine_init(void)
     TIM1->PSC    = 0;
     TIM1->ATRLR  = PWM_ARR;
     /* CH3 PWM mode 1, preload enable */
-    TIM1->CHCTLR2 = (0x6u << 5) | (1u << 3)    /* OC3M=110, OC3PE=1 */
-                  | (0x6u << 13) | (1u << 11);  /* OC4M=110, OC4PE=1 */
+    /* CH3: OC3M at [6:4], OC3PE at [3] — CH4: OC4M at [14:12], OC4PE at [11] */
+    TIM1->CHCTLR2 = (0x6u << 4) | (1u << 3)
+                  | (0x6u << 12) | (1u << 11);
     TIM1->CCER   = TIM_CC3E | TIM_CC4E;
     TIM1->CH3CVR = 0;
     TIM1->CH4CVR = 0;
