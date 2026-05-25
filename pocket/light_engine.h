@@ -10,3 +10,4 @@ typedef struct {
 
 void light_engine_init(void);
 void light_engine_write(const light_frame_t *frame);
+void light_engine_set_brightness(float b); /* 0.0–1.0 */

@@ -14,10 +14,12 @@
 
 #define PWM_ARR 4799u
 
-#define BRIGHTNESS 0.30f  /* 30% — 70% reduction */
+static float s_brightness = 0.30f; /* medium — index 2 of 5 */
 
-static inline uint32_t duty(uint8_t val)   { return (uint32_t)(val * BRIGHTNESS * PWM_ARR / 255u); }
-static inline uint32_t dutyf(float v)      { return (uint32_t)(v * BRIGHTNESS * 0.5f * PWM_ARR); }
+static inline uint32_t duty(uint8_t val)  { return (uint32_t)(val  * s_brightness * PWM_ARR / 255u); }
+static inline uint32_t dutyf(float v)     { return (uint32_t)(v    * s_brightness * 0.5f * PWM_ARR); }
+
+void light_engine_set_brightness(float b) { s_brightness = b; }
 
 void light_engine_init(void)
 {
