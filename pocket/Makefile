@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := build
+
 TARGET             := cat-light-pocket
 ADDITIONAL_C_FILES := light_engine.c modes.c
 
@@ -6,7 +8,12 @@ LDFLAGS        += -lm
 
 include ch32v003fun/ch32fun/ch32fun.mk
 
-all : flash
+.PHONY: all build build-test flash flash-test clean
+
+all : build
+build : $(TARGET).bin
+build-test :
+	$(MAKE) TARGET=board-test ADDITIONAL_C_FILES=light_engine.c build
 flash : cv_flash
 clean : cv_clean
 

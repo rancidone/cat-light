@@ -1,0 +1,43 @@
+name: Firmware builds
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  esp32:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.0
+          target: esp32
+          path: esp32
+          command: idf.py build
+  pocket:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install RISC-V build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential libnewlib-dev
+          archive=xpack-riscv-none-elf-gcc-15.2.0-1-linux-x64.tar.gz
+          base=https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v15.2.0-1
+          cd "$RUNNER_TEMP"
+          curl --fail --location --retry 3 --remote-name "$base/$archive"
+          curl --fail --location --retry 3 --remote-name "$base/$archive.sha"
+          sha256sum --check "$archive.sha"
+          mkdir riscv-toolchain
+          tar -xzf "$archive" --strip-components=1 -C riscv-toolchain
+          echo "$RUNNER_TEMP/riscv-toolchain/bin" >> "$GITHUB_PATH"
+      - name: Build lighting application and board diagnostic without flashing
+        run: |
+          make -C pocket build
+          make -C pocket build-test

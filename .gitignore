@@ -74,6 +74,8 @@ build/
 *.bin
 *.elf
 *.map
+*.hex
+*.lst
 flasher_args.json # Generated in build directory
 sdkconfig.old
 sdkconfig
@@ -114,3 +116,24 @@ compile_commands.json
 
 # Session handoffs
 docs/summaries/
+
+# Editor history and generated fabrication/assembly exports
+.history/
+**/JLCPCB/
+**/jlcpcb/
+**/production/
+/hardware/pocket/historical/
+*.zip
+*.gbr
+*.gbrjob
+*.gm1
+*.gbl
+*.gtl
+*.gbo
+*.gto
+*.gbs
+*.gts
+*.gbp
+*.gtp
+*.drl
+*.ipc

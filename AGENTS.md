@@ -5,7 +5,7 @@ Cat-shaped LED night light with custom PCB (KiCad, ESP32) and ESP-IDF C firmware
 ## Stack
 
 - C
-- ESP-IDF v5.5.3
+- ESP-IDF v6.0.0 (matches `esp32/dependencies.lock`)
 
 ## Where things are
 
@@ -13,6 +13,6 @@ Cat-shaped LED night light with custom PCB (KiCad, ESP32) and ESP-IDF C firmware
   - `./docs/design` — see `./docs/design/TEMPLATE.md` for frontmatter contract and status lifecycle
   - `./docs/discovery`
 - Testing: `./docs/testing-brief.md` — read before writing any tests
-- Makefile: `./CMakeLists.txt`
-- Main Module: `./main/`
+- Build entry points: `./esp32/CMakeLists.txt`, `./pocket/Makefile`
+- Main Module: `./esp32/main/`
 - Kicad PCB: `./pcb/`

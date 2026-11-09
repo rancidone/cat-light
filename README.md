@@ -12,10 +12,12 @@ Both versions have been assembled and used. This is a personal hardware project,
 | Firmware | C with ESP-IDF | C with ch32v003fun |
 | Interface | Device-hosted browser portal and button | One button; no Wi-Fi or scripting |
 | Lighting | Built-in modes and editable Lua scripts | 24 built-in modes |
-| Source | `esp32/` | `pocket/` |
+| Build and use | [ESP32 guide](esp32/README.md) | [Pocket guide](pocket/README.md) |
 | Hardware | `pcb/ESPLight-v1.*` | `pcb/CatLightPocket/` |
 
-The [build story and assembled-board photographs](https://mattmadeitwork.com/projects/catlight/) explain the transition from night light to wearable.
+The [build story and assembled-board photographs](https://mattmadeitwork.com/projects/catlight/) explain the transition from night light to wearable. The original is about five inches tall and has no battery; Pocket uses a low-cost CH32V003 and a small lithium battery soldered directly to the board.
+
+Before assembling either version, read the [hardware and bring-up guide](docs/building.md). The exact battery specification and the correspondence between current PCB files and tested units are not yet established. This is source for experienced builders, not an order-ready hardware release.
 
 ## Get the source
 
@@ -26,40 +28,21 @@ cd cat-light
 
 For an existing checkout, run `git submodule update --init --recursive`. Pocket uses the pinned `pocket/ch32v003fun` submodule.
 
-## ESP32: build and flash
+## Repository map
 
-Install ESP-IDF v5.5.3 and activate its environment, then:
+- [`esp32/`](esp32/README.md): ESP-IDF firmware, browser portal, and development container.
+- [`pocket/`](pocket/README.md): CH32V003 application, board diagnostic, and pinned ch32v003fun dependency.
+- `pcb/ESPLight-v1.*`: ESP32 KiCad design source.
+- `pcb/CatLightPocket/`: Pocket KiCad design source.
+- [`docs/building.md`](docs/building.md): hardware limitations, programming connections, and physical bring-up.
+- [`docs/design/`](docs/design/): ESP32 design notes; some older notes predate the folder separation.
 
-```sh
-cd esp32
-idf.py build
-idf.py -p /dev/your-serial-port flash monitor
-```
+Fabrication and assembly exports are generated locally and excluded from Git. Select and check a board revision before generating files for an order.
 
-The build packages `esp32/www/` into the LittleFS partition and includes it in flashing. The portal contains brightness and mode controls and a Lua editor: try a script in RAM before saving it to flash. The physical button cycles modes.
+## Validation and project status
 
-Hold the button at boot to clear saved Wi-Fi credentials and force setup mode. Connect to the `cat-light` access point using its default setup password `catlight1`, then open `http://192.168.4.1/` to configure Wi-Fi. Once connected to your LAN, open the device's address in a browser. The setup password is public; use this hobby firmware only on a trusted network.
+[Firmware builds](.github/workflows/firmware.yml) compile the ESP32 application and both Pocket programs without hardware. Compilation does not verify LED operation, charging, runtime, or board safety. Follow the [physical bring-up checklist](docs/building.md#bring-up-checklist) on the actual assembly.
 
-## Pocket: build and flash
+The source is shared for experienced builders. A tested source-to-board revision, complete parts specifications, and battery/charging details still need confirmation before this becomes a reproducible hardware release.
 
-Install the RISC-V toolchain and programmer prerequisites described by [ch32v003fun](https://github.com/cnlohr/ch32v003fun). Connect a compatible programmer to the board's programming pads, using the board design to confirm pinout and supply voltage.
-
-```sh
-cd pocket
-make
-```
-
-The default Makefile target builds **and flashes** the connected board. `make flash-test` flashes the separate board-test program instead of the lighting application.
-
-Tap the button to advance through 24 modes, including heartbeat, candle, rainbow, aurora, and lightning. Hold it to advance one of five brightness levels; release and hold again for the next level. Brightness starts at the medium level on boot.
-
-## Evidence and limitations
-
-- `esp32/main/` contains the light engine, Lua interpreter integration, mode manager, persistence, and HTTP server.
-- `pocket/modes.c` and `pocket/cat-light-pocket.c` define the wearable's modes and button behavior.
-- `pcb/` contains the board designs. Confirm the revision against your physical board before building or ordering anything.
-- Treat KiCad source as the design reference. Existing fabrication archives are historical exports, not a verified release of the current design; rerun checks and regenerate outputs before ordering boards.
-- `docs/design/` records the original ESP32 firmware design; older documents may use paths from before the `esp32/` reorganization.
-- `pocket/board-test.c` is a hardware diagnostic, not an automated qualification suite. Build success is not a substitute for checking a physical board.
-
-See `LICENSE` for the repository license. The ch32v003fun submodule retains its own license.
+See [LICENSE](LICENSE). The ch32v003fun submodule retains its own license.
