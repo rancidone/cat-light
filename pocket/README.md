@@ -10,6 +10,7 @@ Install the RISC-V toolchain and programmer prerequisites described by [ch32v003
 
 ```sh
 cd pocket
+git clone https://github.com/cnlohr/ch32v003fun.git
 make
 make build-test
 ```

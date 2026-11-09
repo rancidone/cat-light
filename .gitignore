@@ -137,3 +137,6 @@ docs/summaries/
 *.gtp
 *.drl
 *.ipc
+
+# Separately cloned Pocket dependency
+/pocket/ch32v003fun/

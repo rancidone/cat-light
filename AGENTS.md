@@ -4,7 +4,7 @@ Cat-shaped LED boards: the current CH32V003 CatLightPocket wearable and the orig
 
 ## Status and stack
 
-- Pocket: C with pinned ch32v003fun; current development focus.
+- Pocket: C with separately cloned ch32v003fun; current development focus.
 - ESP32: C with ESP-IDF v6.0.0 (matches `esp32/dependencies.lock`); retired with known bugs. Fixes considered on demand. Do not treat historical design drafts as an active implementation plan.
 
 ## Where things are

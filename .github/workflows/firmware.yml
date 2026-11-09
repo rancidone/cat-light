@@ -22,8 +22,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+      - name: Clone ch32v003fun
+        run: git clone --depth 1 https://github.com/cnlohr/ch32v003fun.git pocket/ch32v003fun
       - name: Check Pocket timer rollover on host
         run: make -C pocket test-host
       - name: Install RISC-V build tools
