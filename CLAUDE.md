@@ -1,22 +1,17 @@
 ## Project
 
-Cat-shaped LED night light with custom PCB (KiCad, ESP32 main board + CH32V003 pocket edition). The hardware has RGB eye LEDs, 4 white whisker LEDs, and a button.
+Cat-shaped LED boards: the current CH32V003 CatLightPocket wearable and the original ESP32 night light. Both have RGB eyes, white LED whiskers, and a button.
 
-## Stack
+## Status and stack
 
-- C
-- ESP-IDF v5.5.3 (ESP32 firmware)
-- ch32v003fun, bare-metal (CH32V003 pocket firmware)
+- Pocket: C with pinned ch32v003fun; current development focus.
+- ESP32: C with ESP-IDF v6.0.0 (matches `esp32/dependencies.lock`); retired with known bugs. Fixes considered on demand. Do not treat historical design drafts as an active implementation plan.
 
 ## Where things are
 
-- ESP32 firmware: `./esp32/` — ESP-IDF project, run `idf.py` from this directory
-  - Main module: `./esp32/main/`
-  - Web UI assets: `./esp32/www/`
-  - Makefile: `./esp32/CMakeLists.txt`
-- CH32V003 pocket firmware: `./pocket/` — ch32v003fun project, run `make` from this directory
-- Firmware Design:
-  - `./docs/design` — see `./docs/design/TEMPLATE.md` for frontmatter contract and status lifecycle
-  - `./docs/discovery`
-- Testing: `./docs/testing-brief.md` — read before writing any tests
-- KiCad PCB: `./pcb/` (main board), `./pcb/CatLightPocket/` (pocket edition)
+- Pocket firmware: `./pocket/`; build entry point `./pocket/Makefile`.
+- Retired ESP32 firmware: `./esp32/main/`; build entry point `./esp32/CMakeLists.txt`; assets `./esp32/www/`.
+- Historical ESP32 design and discovery: `./docs/design/`, `./docs/discovery/`.
+- Testing: read `./docs/testing-brief.md` before writing tests.
+- Hardware and bring-up: `./docs/building.md`.
+- KiCad boards: `./pcb/`, `./pcb/CatLightPocket/`.

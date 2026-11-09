@@ -5,6 +5,8 @@ date: 2026-04-02
 
 # Unit 3 Design — Mode Manager
 
+> Historical ESP32 material. Firmware is retired with known bugs; fixes will be considered on demand. See the [firmware guide](../../esp32/README.md) for current limitations.
+
 ---
 
 ## Problem

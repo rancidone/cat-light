@@ -18,6 +18,10 @@ make build-test
 
 Tap the button to advance through 24 modes, including heartbeat, candle, rainbow, aurora, and lightning. Hold it to advance one of five brightness levels; release and hold again for the next level. Brightness starts at the medium level on boot.
 
+## Timer regression check
+
+Run `make test-host` from `pocket/` with a host C compiler. It checks elapsed-time behavior across timer rollovers without a board or RISC-V toolchain. The firmware samples the hardware counter continuously and accumulates tick differences before converting to milliseconds.
+
 ## Using Pocket
 
 - At startup, the application selects heartbeat mode and medium brightness.

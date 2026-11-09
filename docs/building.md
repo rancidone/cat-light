@@ -27,11 +27,13 @@ The exact battery model, capacity, chemistry/charge-voltage specification, prote
 
 One assembled unit lit successfully but would not charge. The cause was not established before it was encased in epoxy. Charging must be checked independently of LED operation; do not pot or seal an unverified assembly.
 
-## ESP32 programming
+## ESP32 programming (retired firmware)
+
+The ESP32 firmware is retired with known bugs; fixes will be considered on demand. See its [status and known issues](../esp32/README.md) before using these historical instructions.
 
 Use the commands in the [README](../esp32/README.md#build-and-flash) with ESP-IDF v6.0.0 and target `esp32`. The exact serial adapter and board-specific programming wiring have not been recorded. Use the selected design to identify UART, ground, supply, and boot/reset connections before connecting an adapter; do not infer connector pin order from a generic ESP32 board.
 
-After flashing, hold the mode button during boot to clear saved Wi-Fi credentials and enter setup. Connect to `cat-light` with `catlight1` and browse to `http://192.168.4.1/`. Confirm brightness, mode selection, a short trusted Lua script, saving, and cycling saved modes with the button. The portal is unauthenticated HTTP: keep it on an isolated trusted network and never expose it through port forwarding.
+After flashing, hold the mode button during boot to clear saved Wi-Fi credentials and enter setup. Connect to `cat-light` with `catlight1` and browse to `http://192.168.4.1/`. On the LAN, find the device IP in your router and open `http://<device-ip>/app.html` directly; the root redirect and `cat-light.local` link are known bugs. Confirm brightness, mode selection, a short trusted Lua script, saving, and cycling saved modes with the button. The portal is unauthenticated HTTP: keep it on an isolated trusted network and never expose it through port forwarding.
 
 ## Pocket programming
 
@@ -73,4 +75,4 @@ Record results for the actual physical board and the source commit used, not jus
 - Record faults, substitutions, bodges, and measurements. Do not claim runtime or electrical/thermal qualification from build success.
 - Keep the assembly accessible for diagnosis. Do not encase it in epoxy before testing the complete intended behavior, including charging.
 
-A demonstration video is planned but not yet supplied. Existing photographs document assembled units, not completion of this checklist for the latest design.
+No demonstration video is included. Existing photographs document assembled units, not completion of this checklist for the latest design.

@@ -1,48 +1,54 @@
 # CatLight
 
-A cat-shaped circuit board with RGB eyes and white LED whiskers, built in two forms: a programmable ESP32 night light and a smaller CH32V003 wearable called CatLightPocket.
+CatLight is a cat-shaped circuit board with RGB eyes and white LED whiskers. It started as a programmable night light and became **CatLightPocket**, a small wearable light with 24 animated patterns and one-button control.
 
-Both versions have been assembled and used. This is a personal hardware project, not a production-qualified product. Board files and firmware document the builds; they do not establish battery runtime, electrical safety, or manufacturing readiness.
+Pocket is the current focus: tap to change the pattern, or hold to step through five brightness levels. It uses a CH32V003 microcontroller, runs without Wi-Fi, and starts in heartbeat mode at medium brightness. Both versions have been assembled and used.
 
-## Choose a version
+Read the [build story and see assembled-board photographs](https://mattmadeitwork.com/projects/catlight/), or start with the [Pocket guide](pocket/README.md).
 
-| | ESP32 CatLight | CatLightPocket |
+## Two versions
+
+| | CatLightPocket | Original ESP32 CatLight |
 | --- | --- | --- |
-| Purpose | Experiment with lighting scripts | Pin on and wear |
-| Firmware | C with ESP-IDF | C with ch32v003fun |
-| Interface | Device-hosted browser portal and button | One button; no Wi-Fi or scripting |
-| Lighting | Built-in modes and editable Lua scripts | 24 built-in modes |
-| Build and use | [ESP32 guide](esp32/README.md) | [Pocket guide](pocket/README.md) |
-| Hardware | `pcb/ESPLight-v1.*` | `pcb/CatLightPocket/` |
+| Status | Current project | Retired; known bugs |
+| Form | Small battery-powered wearable | Externally powered night light, about five inches tall |
+| Lighting | 24 built-in patterns | Built-in modes and editable Lua scripts |
+| Controls | One button; five brightness levels | Button and device-hosted browser portal |
+| Firmware | C with ch32v003fun | C with ESP-IDF |
+| Guide | [Build and use Pocket](pocket/README.md) | [Retired ESP32 firmware](esp32/README.md) |
+| Board source | `pcb/CatLightPocket/` | `pcb/ESPLight-v1.*` |
 
-The [build story and assembled-board photographs](https://mattmadeitwork.com/projects/catlight/) explain the transition from night light to wearable. The original is about five inches tall and has no battery; Pocket uses a low-cost CH32V003 and a small lithium battery soldered directly to the board.
+**The ESP32 firmware is retired with known bugs. Fixes will be considered on demand; there is no ongoing development or scheduled maintenance.** Its source, browser assets, and design notes remain available as a record of the original build.
 
-Before assembling either version, read the [hardware and bring-up guide](docs/building.md). The exact battery specification and the correspondence between current PCB files and tested units are not yet established. This is source for experienced builders, not an order-ready hardware release.
+## Build your own
 
-## Get the source
+This is a personal hardware project shared for experienced builders. Before assembling either version, read the [hardware and bring-up guide](docs/building.md). It covers programming connections, assembly evidence, and the remaining gaps in parts and power specifications.
+
+Pocket's exact battery and charging specifications, and the correspondence between the current board files and tested units, still need confirmation. The repository is not yet an order-ready hardware release. Build success and photographs do not establish battery runtime, electrical safety, or manufacturing readiness.
+
+Clone with the pinned Pocket dependency:
 
 ```sh
 git clone --recurse-submodules https://github.com/rancidone/cat-light.git
 cd cat-light
 ```
 
-For an existing checkout, run `git submodule update --init --recursive`. Pocket uses the pinned `pocket/ch32v003fun` submodule.
+For an existing checkout, run `git submodule update --init --recursive`. Follow the [Pocket guide](pocket/README.md) for the toolchain, building, and flashing.
 
-## Repository map
+## What's in the repository
 
-- [`esp32/`](esp32/README.md): ESP-IDF firmware, browser portal, and development container.
-- [`pocket/`](pocket/README.md): CH32V003 application, board diagnostic, and pinned ch32v003fun dependency.
-- `pcb/ESPLight-v1.*`: ESP32 KiCad design source.
+- [`pocket/`](pocket/README.md): wearable firmware, board diagnostic, and pinned ch32v003fun dependency.
 - `pcb/CatLightPocket/`: Pocket KiCad design source.
-- [`docs/building.md`](docs/building.md): hardware limitations, programming connections, and physical bring-up.
-- [`docs/design/`](docs/design/): ESP32 design notes; some older notes predate the folder separation.
+- [`esp32/`](esp32/README.md): retired ESP-IDF firmware, browser portal, and development container.
+- `pcb/ESPLight-v1.*`: original ESP32 KiCad design source.
+- [`docs/building.md`](docs/building.md): hardware status, assembly, programming, and physical bring-up.
+- [`docs/design/`](docs/design/README.md) and [`docs/discovery/`](docs/discovery/v2-firmware-discovery.md): historical ESP32 design material.
+- [`TODO.md`](TODO.md): remaining release documentation work.
 
 Fabrication and assembly exports are generated locally and excluded from Git. Select and check a board revision before generating files for an order.
 
-## Validation and project status
+## Validation and license
 
-[Firmware builds](.github/workflows/firmware.yml) compile the ESP32 application and both Pocket programs without hardware. Compilation does not verify LED operation, charging, runtime, or board safety. Follow the [physical bring-up checklist](docs/building.md#bring-up-checklist) on the actual assembly.
-
-The source is shared for experienced builders. A tested source-to-board revision, complete parts specifications, and battery/charging details still need confirmation before this becomes a reproducible hardware release.
+[Firmware builds](.github/workflows/firmware.yml) compile both Pocket programs and retain a compilation check for the retired ESP32 application. Pocket also has a [host timer regression check](docs/testing-brief.md). These checks do not replace testing on the actual assembly; follow the [bring-up checklist](docs/building.md#bring-up-checklist).
 
 See [LICENSE](LICENSE). The ch32v003fun submodule retains its own license.

@@ -5,6 +5,8 @@ date: 2026-04-02
 
 # Web UI Design
 
+> Historical ESP32 material. Firmware is retired with known bugs; fixes will be considered on demand. See the [firmware guide](../../esp32/README.md) for current limitations.
+
 ## Problem
 
 Provide a browser UI that makes device setup, mode control, and script authoring understandable for non-technical users, while remaining small and robust enough to be served directly from device flash over a connection that may disappear during WiFi changes.
@@ -183,4 +185,4 @@ The UI should reflect the API's request/response nature directly:
 
 ## Readiness
 
-High. The main app structure is now concrete: three primary destinations, explicit screen ownership, and contained WiFi handoff behavior aligned with the current API and firmware model.
+Historical draft only. This is not a release-readiness assessment; the retired implementation has known navigation, discovery, and error-handling limitations documented in the firmware guide.

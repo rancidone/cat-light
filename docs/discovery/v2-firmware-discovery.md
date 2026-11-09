@@ -1,5 +1,7 @@
 # Discovery Brief — Cat Light v2 Firmware
 
+> Historical ESP32 material. Firmware is retired with known bugs; fixes will be considered on demand. See the [firmware guide](../../esp32/README.md) for current limitations.
+
 **Status:** Complete — ready for Design  
 **Date:** 2026-03-24
 
@@ -26,7 +28,7 @@ V1 firmware is a functional but minimal learning exercise. V2 is a complete prod
 ## Constraints
 
 - Hardware fixed: ESP32, RGB eye LEDs, 4 white whisker LEDs, 1 button
-- ESP-IDF v5.5.3
+- ESP-IDF v5.5.3 at discovery time; the retained project now uses v6.0.0
 - Scripting runtime must fit within ESP32 memory budget alongside firmware (Lua strongly implied)
 - Web UI assets must be served from device flash — no CDN, no external dependencies at runtime
 - Up to 10 named user scripts stored to flash via LittleFS

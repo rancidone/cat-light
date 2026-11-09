@@ -6,6 +6,8 @@ discovery: ../discovery/v2-firmware-discovery.md
 
 # System Design — Cat Light v2 Firmware
 
+> Historical ESP32 material. Firmware is retired with known bugs; fixes will be considered on demand. See the [firmware guide](../../esp32/README.md) for current limitations.
+
 ---
 
 ## Units
@@ -57,4 +59,4 @@ Light Engine
 
 **Status:** Complete — constraint resolved.
 
-**Result:** 203 KB free after WiFi (STA init) + HTTP server + Lua VM + stdlib. Well above 50 KB threshold. No memory-driven constraints on scripting engine design. See `../summaries/handoff_2026-03-24T17:00_heap-spike.md` for full numbers.
+**Result:** 203 KB free after WiFi (STA init) + HTTP server + Lua VM + stdlib. Well above 50 KB threshold. No memory-driven constraints on scripting engine design. The original local handoff with full measurements is not distributed in this repository; this is a historical result, not a current qualification.

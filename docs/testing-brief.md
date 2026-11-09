@@ -2,9 +2,9 @@
 
 ## Framework
 
-There is currently no automated firmware behavior-test suite. `.github/workflows/firmware.yml` performs build-only checks for ESP32 and the two Pocket programs. `pocket/board-test.c` is a manually flashed hardware diagnostic. Physical acceptance checks are in `docs/building.md`.
+Pocket has a host timer regression check (`make -C pocket test-host`), also run in CI. It checks fractional-tick accumulation, frame timing across hardware-counter rollover, an hour of simulated elapsed time across multiple wraps, and button-duration arithmetic across millisecond rollover. There is no broader automated firmware behavior-test suite. `.github/workflows/firmware.yml` also compiles ESP32 and the two Pocket programs. `pocket/board-test.c` is a manually flashed hardware diagnostic. Physical acceptance checks are in `docs/building.md`.
 
-For future ESP32 tests, use the ESP-IDF Unity test runner, with tests under `esp32/test/`, one subdirectory per unit. Prefer host-compilable tests where dependencies can be stubbed; run hardware-dependent checks on-device. The following rules describe the intended testing approach, not existing coverage.
+ESP32 firmware is retired with known bugs; fixes are considered on demand. If work resumes, use the ESP-IDF Unity test runner, with tests under `esp32/test/`, one subdirectory per unit. Prefer host-compilable tests where dependencies can be stubbed; run hardware-dependent checks on-device. The following rules describe the intended testing approach, not existing coverage.
 
 ## Rules
 
